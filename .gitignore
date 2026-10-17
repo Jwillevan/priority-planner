@@ -1,0 +1,28 @@
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+coverage/
+*.g.dart
+android/.gradle/
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+.idea/
+*.iml
+__pycache__/
+.bootstrap/
+# Personal planner data, local exports, and development credentials.
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+media/
+backups/
+*.ppbackup
+.env
+.env.*
+!.env.example
+# Keep pubspec.lock in version control once dependencies are resolved.

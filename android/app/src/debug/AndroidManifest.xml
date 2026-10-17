@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Flutter's debug VM service uses sockets, including with USB forwarding.
+         This permission is excluded from release builds. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>
