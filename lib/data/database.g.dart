@@ -522,6 +522,18 @@ class $PlannerTasksTable extends PlannerTasks
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _delegatedToMeta = const VerificationMeta(
+    'delegatedTo',
+  );
+  @override
+  late final GeneratedColumn<String> delegatedTo = GeneratedColumn<String>(
+    'delegated_to',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _priorityMeta = const VerificationMeta(
     'priority',
   );
@@ -573,6 +585,7 @@ class $PlannerTasksTable extends PlannerTasks
     day,
     title,
     details,
+    delegatedTo,
     priority,
     position,
     status,
@@ -613,6 +626,15 @@ class $PlannerTasksTable extends PlannerTasks
       context.handle(
         _detailsMeta,
         details.isAcceptableOrUnknown(data['details']!, _detailsMeta),
+      );
+    }
+    if (data.containsKey('delegated_to')) {
+      context.handle(
+        _delegatedToMeta,
+        delegatedTo.isAcceptableOrUnknown(
+          data['delegated_to']!,
+          _delegatedToMeta,
+        ),
       );
     }
     if (data.containsKey('priority')) {
@@ -666,6 +688,10 @@ class $PlannerTasksTable extends PlannerTasks
         DriftSqlType.string,
         data['${effectivePrefix}details'],
       )!,
+      delegatedTo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}delegated_to'],
+      )!,
       priority: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}priority'],
@@ -696,6 +722,7 @@ class PlannerTask extends DataClass implements Insertable<PlannerTask> {
   final String day;
   final String title;
   final String details;
+  final String delegatedTo;
   final String priority;
   final int position;
   final String status;
@@ -705,6 +732,7 @@ class PlannerTask extends DataClass implements Insertable<PlannerTask> {
     required this.day,
     required this.title,
     required this.details,
+    required this.delegatedTo,
     required this.priority,
     required this.position,
     required this.status,
@@ -717,6 +745,7 @@ class PlannerTask extends DataClass implements Insertable<PlannerTask> {
     map['day'] = Variable<String>(day);
     map['title'] = Variable<String>(title);
     map['details'] = Variable<String>(details);
+    map['delegated_to'] = Variable<String>(delegatedTo);
     map['priority'] = Variable<String>(priority);
     map['position'] = Variable<int>(position);
     map['status'] = Variable<String>(status);
@@ -730,6 +759,7 @@ class PlannerTask extends DataClass implements Insertable<PlannerTask> {
       day: Value(day),
       title: Value(title),
       details: Value(details),
+      delegatedTo: Value(delegatedTo),
       priority: Value(priority),
       position: Value(position),
       status: Value(status),
@@ -747,6 +777,7 @@ class PlannerTask extends DataClass implements Insertable<PlannerTask> {
       day: serializer.fromJson<String>(json['day']),
       title: serializer.fromJson<String>(json['title']),
       details: serializer.fromJson<String>(json['details']),
+      delegatedTo: serializer.fromJson<String>(json['delegatedTo']),
       priority: serializer.fromJson<String>(json['priority']),
       position: serializer.fromJson<int>(json['position']),
       status: serializer.fromJson<String>(json['status']),
@@ -761,6 +792,7 @@ class PlannerTask extends DataClass implements Insertable<PlannerTask> {
       'day': serializer.toJson<String>(day),
       'title': serializer.toJson<String>(title),
       'details': serializer.toJson<String>(details),
+      'delegatedTo': serializer.toJson<String>(delegatedTo),
       'priority': serializer.toJson<String>(priority),
       'position': serializer.toJson<int>(position),
       'status': serializer.toJson<String>(status),
@@ -773,6 +805,7 @@ class PlannerTask extends DataClass implements Insertable<PlannerTask> {
     String? day,
     String? title,
     String? details,
+    String? delegatedTo,
     String? priority,
     int? position,
     String? status,
@@ -782,6 +815,7 @@ class PlannerTask extends DataClass implements Insertable<PlannerTask> {
     day: day ?? this.day,
     title: title ?? this.title,
     details: details ?? this.details,
+    delegatedTo: delegatedTo ?? this.delegatedTo,
     priority: priority ?? this.priority,
     position: position ?? this.position,
     status: status ?? this.status,
@@ -793,6 +827,9 @@ class PlannerTask extends DataClass implements Insertable<PlannerTask> {
       day: data.day.present ? data.day.value : this.day,
       title: data.title.present ? data.title.value : this.title,
       details: data.details.present ? data.details.value : this.details,
+      delegatedTo: data.delegatedTo.present
+          ? data.delegatedTo.value
+          : this.delegatedTo,
       priority: data.priority.present ? data.priority.value : this.priority,
       position: data.position.present ? data.position.value : this.position,
       status: data.status.present ? data.status.value : this.status,
@@ -807,6 +844,7 @@ class PlannerTask extends DataClass implements Insertable<PlannerTask> {
           ..write('day: $day, ')
           ..write('title: $title, ')
           ..write('details: $details, ')
+          ..write('delegatedTo: $delegatedTo, ')
           ..write('priority: $priority, ')
           ..write('position: $position, ')
           ..write('status: $status, ')
@@ -821,6 +859,7 @@ class PlannerTask extends DataClass implements Insertable<PlannerTask> {
     day,
     title,
     details,
+    delegatedTo,
     priority,
     position,
     status,
@@ -834,6 +873,7 @@ class PlannerTask extends DataClass implements Insertable<PlannerTask> {
           other.day == this.day &&
           other.title == this.title &&
           other.details == this.details &&
+          other.delegatedTo == this.delegatedTo &&
           other.priority == this.priority &&
           other.position == this.position &&
           other.status == this.status &&
@@ -845,6 +885,7 @@ class PlannerTasksCompanion extends UpdateCompanion<PlannerTask> {
   final Value<String> day;
   final Value<String> title;
   final Value<String> details;
+  final Value<String> delegatedTo;
   final Value<String> priority;
   final Value<int> position;
   final Value<String> status;
@@ -854,6 +895,7 @@ class PlannerTasksCompanion extends UpdateCompanion<PlannerTask> {
     this.day = const Value.absent(),
     this.title = const Value.absent(),
     this.details = const Value.absent(),
+    this.delegatedTo = const Value.absent(),
     this.priority = const Value.absent(),
     this.position = const Value.absent(),
     this.status = const Value.absent(),
@@ -864,6 +906,7 @@ class PlannerTasksCompanion extends UpdateCompanion<PlannerTask> {
     required String day,
     required String title,
     this.details = const Value.absent(),
+    this.delegatedTo = const Value.absent(),
     this.priority = const Value.absent(),
     this.position = const Value.absent(),
     this.status = const Value.absent(),
@@ -876,6 +919,7 @@ class PlannerTasksCompanion extends UpdateCompanion<PlannerTask> {
     Expression<String>? day,
     Expression<String>? title,
     Expression<String>? details,
+    Expression<String>? delegatedTo,
     Expression<String>? priority,
     Expression<int>? position,
     Expression<String>? status,
@@ -886,6 +930,7 @@ class PlannerTasksCompanion extends UpdateCompanion<PlannerTask> {
       if (day != null) 'day': day,
       if (title != null) 'title': title,
       if (details != null) 'details': details,
+      if (delegatedTo != null) 'delegated_to': delegatedTo,
       if (priority != null) 'priority': priority,
       if (position != null) 'position': position,
       if (status != null) 'status': status,
@@ -898,6 +943,7 @@ class PlannerTasksCompanion extends UpdateCompanion<PlannerTask> {
     Value<String>? day,
     Value<String>? title,
     Value<String>? details,
+    Value<String>? delegatedTo,
     Value<String>? priority,
     Value<int>? position,
     Value<String>? status,
@@ -908,6 +954,7 @@ class PlannerTasksCompanion extends UpdateCompanion<PlannerTask> {
       day: day ?? this.day,
       title: title ?? this.title,
       details: details ?? this.details,
+      delegatedTo: delegatedTo ?? this.delegatedTo,
       priority: priority ?? this.priority,
       position: position ?? this.position,
       status: status ?? this.status,
@@ -929,6 +976,9 @@ class PlannerTasksCompanion extends UpdateCompanion<PlannerTask> {
     }
     if (details.present) {
       map['details'] = Variable<String>(details.value);
+    }
+    if (delegatedTo.present) {
+      map['delegated_to'] = Variable<String>(delegatedTo.value);
     }
     if (priority.present) {
       map['priority'] = Variable<String>(priority.value);
@@ -952,6 +1002,7 @@ class PlannerTasksCompanion extends UpdateCompanion<PlannerTask> {
           ..write('day: $day, ')
           ..write('title: $title, ')
           ..write('details: $details, ')
+          ..write('delegatedTo: $delegatedTo, ')
           ..write('priority: $priority, ')
           ..write('position: $position, ')
           ..write('status: $status, ')
@@ -6742,6 +6793,7 @@ typedef $$PlannerTasksTableCreateCompanionBuilder =
       required String day,
       required String title,
       Value<String> details,
+      Value<String> delegatedTo,
       Value<String> priority,
       Value<int> position,
       Value<String> status,
@@ -6753,6 +6805,7 @@ typedef $$PlannerTasksTableUpdateCompanionBuilder =
       Value<String> day,
       Value<String> title,
       Value<String> details,
+      Value<String> delegatedTo,
       Value<String> priority,
       Value<int> position,
       Value<String> status,
@@ -6892,6 +6945,11 @@ class $$PlannerTasksTableFilterComposer
 
   ColumnFilters<String> get details => $composableBuilder(
     column: $table.details,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get delegatedTo => $composableBuilder(
+    column: $table.delegatedTo,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7071,6 +7129,11 @@ class $$PlannerTasksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get delegatedTo => $composableBuilder(
+    column: $table.delegatedTo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get priority => $composableBuilder(
     column: $table.priority,
     builder: (column) => ColumnOrderings(column),
@@ -7112,6 +7175,11 @@ class $$PlannerTasksTableAnnotationComposer
 
   GeneratedColumn<String> get details =>
       $composableBuilder(column: $table.details, builder: (column) => column);
+
+  GeneratedColumn<String> get delegatedTo => $composableBuilder(
+    column: $table.delegatedTo,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get priority =>
       $composableBuilder(column: $table.priority, builder: (column) => column);
@@ -7292,6 +7360,7 @@ class $$PlannerTasksTableTableManager
                 Value<String> day = const Value.absent(),
                 Value<String> title = const Value.absent(),
                 Value<String> details = const Value.absent(),
+                Value<String> delegatedTo = const Value.absent(),
                 Value<String> priority = const Value.absent(),
                 Value<int> position = const Value.absent(),
                 Value<String> status = const Value.absent(),
@@ -7301,6 +7370,7 @@ class $$PlannerTasksTableTableManager
                 day: day,
                 title: title,
                 details: details,
+                delegatedTo: delegatedTo,
                 priority: priority,
                 position: position,
                 status: status,
@@ -7312,6 +7382,7 @@ class $$PlannerTasksTableTableManager
                 required String day,
                 required String title,
                 Value<String> details = const Value.absent(),
+                Value<String> delegatedTo = const Value.absent(),
                 Value<String> priority = const Value.absent(),
                 Value<int> position = const Value.absent(),
                 Value<String> status = const Value.absent(),
@@ -7321,6 +7392,7 @@ class $$PlannerTasksTableTableManager
                 day: day,
                 title: title,
                 details: details,
+                delegatedTo: delegatedTo,
                 priority: priority,
                 position: position,
                 status: status,

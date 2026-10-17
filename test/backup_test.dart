@@ -94,6 +94,14 @@ void main() {
       final checked = await service.validate(bytes, 'correct horse');
       expect(checked.tables.length, db.allTables.length);
       expect(checked.files, hasLength(1));
+      final legacyBytes = await changePayload(service, bytes, (p) {
+        p['schema'] = 5;
+        for (final row in p['tables']['planner_tasks']) {
+          row.remove('delegated_to');
+        }
+      });
+      final legacy = await service.validate(legacyBytes, 'correct horse');
+      expect(legacy.tables['planner_tasks']!.single['delegated_to'], '');
       await db.saveNote('2026-10-16', 'Newer current');
       final originalFile =
           (await db.watchAttachments(entry).first).single.filename;

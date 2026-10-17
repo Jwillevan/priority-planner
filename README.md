@@ -1,6 +1,6 @@
 # Priority Planner
 
-Offline-first Flutter Android planner with a traditional ivory, ruled-paper daily spread. An installable 1.0.0 preview is available in `dist/`. Automated checks and Android 16 emulator integration passed; physical-phone acceptance checks remain.
+Offline-first Flutter Android planner with a traditional ivory, ruled-paper daily spread. An installable 1.0.1 preview is available in `dist/`. Automated checks and Android 16 emulator integration passed; physical-phone acceptance checks remain.
 
 ## Features available
 
@@ -34,7 +34,7 @@ flutter build apk --release --config-only
 flutter build apk --release --no-pub
 ```
 
-The NDK blocker is resolved: version 28.2.13676358 is installed and both debug and optimized APK builds succeeded. The deliverable is `dist/Priority-Planner-1.0.0-preview.apk`, with SHA-256 in `dist/SHA256SUMS.txt`. It supports Android 7.0 (API 24) or later and ARM32, ARM64 and x86_64.
+The NDK blocker is resolved: version 28.2.13676358 is installed and both debug and optimized APK builds succeeded. The deliverable is `dist/Priority-Planner-1.0.1-preview.apk`, with SHA-256 in `dist/SHA256SUMS.txt`. It supports Android 7.0 (API 24) or later and ARM32, ARM64 and x86_64.
 
 The preview uses the existing development signing key for personal testing. Production signing and app-store publication have not been performed. See `docs/phone-acceptance.md` to install and test it on your phone.
 
@@ -59,3 +59,7 @@ Saved journal entries accept attachments. Attachment mutations save immediately,
 
 See `docs/milestone-1.md` through `docs/milestone-8.md` for implementation inventories, actual test results and limitations. Synced `sources/` references are read-only and were not changed.
 
+
+## Version 1.0.1
+
+Forwarding keeps a Forwarded record on the original day and an open task on the destination day. Later completion does not change the original record. Existing moves from earlier versions are retained in history. Delegated tasks have a first-name field in the editor; names stay off the daily list. Use the three-dot menu and Move to position to choose any rank within the same ABC group. Existing planner data and version 5 encrypted backups upgrade safely.

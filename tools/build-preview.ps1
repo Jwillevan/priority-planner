@@ -18,11 +18,14 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Release configuration failed.' }
     & flutter build apk --release --no-pub
     if ($LASTEXITCODE -ne 0) { throw 'APK build failed.' }
-    $artifactPath = Join-Path $projectPath 'dist/Priority-Planner-1.0.0-preview.apk'
+    $versionLine = Get-Content -LiteralPath (Join-Path $projectPath 'pubspec.yaml') | Where-Object { $_ -match '^version:\s*(\d+\.\d+\.\d+)\+' } | Select-Object -First 1
+    if ($versionLine -notmatch '^version:\s*(\d+\.\d+\.\d+)\+') { throw 'Missing app version.' }
+    $artifactName = "Priority-Planner-$($Matches[1])-preview.apk"
+    $artifactPath = Join-Path $projectPath "dist/$artifactName"
     New-Item -ItemType Directory -Force (Join-Path $projectPath 'dist') | Out-Null
     Copy-Item -LiteralPath (Join-Path $projectPath 'build/app/outputs/flutter-apk/app-release.apk') -Destination $artifactPath -Force
     $artifactHash = (Get-FileHash -LiteralPath $artifactPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    Set-Content -LiteralPath (Join-Path $projectPath 'dist/SHA256SUMS.txt') -Value "$artifactHash  Priority-Planner-1.0.0-preview.apk"
+    Set-Content -LiteralPath (Join-Path $projectPath 'dist/SHA256SUMS.txt') -Value "$artifactHash  $artifactName"
     Write-Output "Preview APK: $artifactPath"
     Write-Output 'This personal-test build uses the development signing key. Configure production signing before publication.'
 } finally {

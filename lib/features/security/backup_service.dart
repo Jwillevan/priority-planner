@@ -132,7 +132,7 @@ class BackupService {
     final payload = jsonDecode(utf8.decode(clear)) as Map<String, dynamic>;
     if (payload['format'] != 'priority-planner' ||
         payload['version'] != 1 ||
-        payload['schema'] != db.schemaVersion) {
+        ![5, db.schemaVersion].contains(payload['schema'])) {
       throw FormatException('Backup version is incompatible');
     }
     final tables = <String, List<Map<String, Object?>>>{};
@@ -146,6 +146,10 @@ class BackupService {
       final columns = table.$columns.map((c) => c.$name).toSet();
       tables[table.actualTableName] = rows.map((r) {
         final row = Map<String, Object?>.from(r as Map);
+        if (payload['schema'] == 5 &&
+            table.actualTableName == 'planner_tasks') {
+          row['delegated_to'] = '';
+        }
         if (row.keys.toSet().difference(columns).isNotEmpty ||
             columns.difference(row.keys.toSet()).isNotEmpty ||
             row.values.any((v) => v != null && v is! String && v is! num)) {

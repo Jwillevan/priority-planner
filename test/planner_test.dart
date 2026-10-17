@@ -31,12 +31,79 @@ void main() {
       db.setTaskStatus(second.id, 'forwarded', targetDay: '2026-10-17'),
       throwsArgumentError,
     );
-    expect(await db.select(db.plannerTasks).get(), hasLength(4));
+    expect(await db.select(db.plannerTasks).get(), hasLength(5));
     final moved = (await db.watchTasks('2026-10-17').first).single;
     expect(moved.status, 'open');
+    final original = (await db.watchTasks('2026-10-16').first).singleWhere(
+      (t) => t.status == 'forwarded',
+    );
+    expect(original.title, second.title);
+    await db.setTaskStatus(moved.id, 'completed');
+    expect(
+      (await db.watchTasks('2026-10-16').first)
+          .singleWhere((t) => t.id == original.id)
+          .status,
+      'forwarded',
+    );
     expect(moved.id, second.id);
-    expect(await db.select(db.taskHistories).get(), hasLength(2));
+    expect(await db.select(db.taskHistories).get(), hasLength(3));
   });
+  test(
+    'direct position moves shift intervening tasks and preserve delegate names',
+    () async {
+      final db = PlannerDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      for (var i = 0; i < 5; i++) {
+        await db.saveTask(
+          day: '2026-10-17',
+          title: 'Task $i',
+          details: '',
+          priority: 'A',
+          delegatedTo: i == 0 ? 'Sam' : '',
+        );
+      }
+      var tasks = await db.watchTasks('2026-10-17').first;
+      final id = tasks.first.id;
+      await db.moveTaskToPosition(id, 5);
+      tasks = await db.watchTasks('2026-10-17').first;
+      expect(tasks.map((t) => t.title), [
+        'Task 1',
+        'Task 2',
+        'Task 3',
+        'Task 4',
+        'Task 0',
+      ]);
+      expect(tasks.last.delegatedTo, 'Sam');
+      await db.moveTaskToPosition(id, 2);
+      expect((await db.watchTasks('2026-10-17').first)[1].id, id);
+      await expectLater(db.moveTaskToPosition(id, 0), throwsArgumentError);
+    },
+  );
+  test(
+    'version 5 task migration preserves task and adds empty delegate',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('planner-v5-');
+      final file = File('${dir.path}/planner.sqlite');
+      var db = PlannerDatabase.forTesting(NativeDatabase(file));
+      await db.saveTask(
+        day: '2026-10-17',
+        title: 'Preserved',
+        details: '',
+        priority: 'A',
+      );
+      await db.close();
+      final old = sqlite.sqlite3.open(file.path);
+      old.execute('ALTER TABLE planner_tasks DROP COLUMN delegated_to');
+      old.execute('PRAGMA user_version = 5');
+      old.close();
+      db = PlannerDatabase.forTesting(NativeDatabase(file));
+      final task = (await db.watchTasks('2026-10-17').first).single;
+      expect(task.title, 'Preserved');
+      expect(task.delegatedTo, '');
+      await db.close();
+      await dir.delete(recursive: true);
+    },
+  );
   test('appointment validation permits overlaps and edits', () async {
     final db = PlannerDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);

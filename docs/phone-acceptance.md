@@ -4,7 +4,7 @@ The final planned milestone produces an installable preview APK for personal acc
 
 ## Install
 
-1. Copy `dist/Priority-Planner-1.0.0-preview.apk` to your Android phone (USB or your chosen file transfer).
+1. Copy `dist/Priority-Planner-1.0.1-preview.apk` to your Android phone (USB or your chosen file transfer).
 2. Open the APK on the phone. If Android asks, allow this specific file source to install apps, then choose Install.
 3. Open Priority Planner and choose Start Tutorial or Skip for Now. No account or subscription is required.
 4. Try it with sample information first. Keep encrypted backups outside the app before entrusting irreplaceable records or uninstalling.

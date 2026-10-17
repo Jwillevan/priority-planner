@@ -33,7 +33,12 @@ void main() {
       priority: 'B',
     );
     await db.reviewTasks([a, b, a], 'forwarded', targetDay: '2026-10-17');
-    expect(await db.watchTasks('2026-10-16').first, isEmpty);
+    expect(
+      (await db.watchTasks('2026-10-16').first).every(
+        (t) => t.status == 'forwarded',
+      ),
+      isTrue,
+    );
     expect(await db.watchTasks('2026-10-17').first, hasLength(2));
     expect(await db.select(db.taskHistories).get(), hasLength(2));
     await db.reviewTasks([a, b], 'forwarded', targetDay: '2026-10-17');
@@ -157,8 +162,9 @@ void main() {
     await tester.tap(find.text('Apply to 2 tasks'));
     await settle(tester);
     expect(
-      await tester.runAsync(() => db.watchTasks('2026-10-16').first),
-      isEmpty,
+      (await tester.runAsync(() => db.watchTasks('2026-10-16').first))!
+          .map((t) => t.status),
+      ['forwarded', 'forwarded'],
     );
     expect(
       await tester.runAsync(() => db.watchTasks('2026-10-17').first),
@@ -168,4 +174,66 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await tester.runAsync(db.close);
   });
+  testWidgets(
+    'delegate is private to editor and task can move directly to last position',
+    (tester) async {
+      final db = PlannerDatabase.forTesting(NativeDatabase.memory());
+      await tester.runAsync(() async {
+        for (var i = 0; i < 3; i++) {
+          final id = await db.saveTask(
+            day: '2026-10-16',
+            title: 'Action $i',
+            details: '',
+            priority: 'A',
+            delegatedTo: i == 0 ? 'Sam' : '',
+          );
+          if (i == 0) await db.setTaskStatus(id, 'delegated');
+        }
+      });
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [databaseProvider.overrideWithValue(db)],
+          child: MaterialApp(
+            home: Scaffold(
+              body: PlannerScreen(initialDate: DateTime(2026, 10, 16)),
+            ),
+          ),
+        ),
+      );
+      await settle(tester);
+      expect(find.text('Sam'), findsNothing);
+      await tester.tap(find.text('Action 0'));
+      await settle(tester);
+      expect(
+        tester
+            .widget<TextField>(
+              find.widgetWithText(TextField, 'Delegated to (first name)'),
+            )
+            .controller!
+            .text,
+        'Sam',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Delegated to (first name)'),
+        'Alex',
+      );
+      await tester.tap(find.text('Save'));
+      await settle(tester);
+      expect(find.text('Alex'), findsNothing);
+      await tester.tap(find.byTooltip('Reorder task').first);
+      await settle(tester);
+      await tester.tap(find.text('Move to position…'));
+      await settle(tester);
+      await tester.tap(find.text('A3 — Action 2'));
+      await settle(tester);
+      final tasks = (await tester.runAsync(
+        () => db.watchTasks('2026-10-16').first,
+      ))!;
+      expect(tasks.last.title, 'Action 0');
+      expect(tasks.last.delegatedTo, 'Alex');
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+      await tester.runAsync(db.close);
+    },
+  );
 }

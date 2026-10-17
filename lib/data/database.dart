@@ -41,6 +41,7 @@ class PlannerTasks extends Table {
   TextColumn get day => text()();
   TextColumn get title => text()();
   TextColumn get details => text().withDefault(const Constant(''))();
+  TextColumn get delegatedTo => text().withDefault(const Constant(''))();
   TextColumn get priority => text().withDefault(const Constant('A'))();
   IntColumn get position => integer().withDefault(const Constant(0))();
   TextColumn get status => text().withDefault(const Constant('open'))();
@@ -247,11 +248,18 @@ class PlannerDatabase extends _$PlannerDatabase {
   PlannerDatabase.forTesting(super.executor) : ephemeral = true;
   final bool ephemeral;
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
+      if (from >= 2 && from < 6) {
+        final columns = await customSelect('PRAGMA table_info(planner_tasks)')
+            .get();
+        if (!columns.any((c) => c.read<String>('name') == 'delegated_to')) {
+          await m.addColumn(plannerTasks, plannerTasks.delegatedTo);
+        }
+      }
       if (from < 2) {
         await m.createTable(plannerTasks);
         await m.createTable(taskHistories);
@@ -315,6 +323,7 @@ class PlannerDatabase extends _$PlannerDatabase {
     required String title,
     required String details,
     required String priority,
+    String? delegatedTo,
   }) async {
     if (title.trim().isEmpty || !['A', 'B', 'C'].contains(priority)) {
       throw ArgumentError('A title and ABC priority are required');
@@ -331,6 +340,7 @@ class PlannerDatabase extends _$PlannerDatabase {
           day: day,
           title: title.trim(),
           details: Value(details),
+          delegatedTo: Value(delegatedTo?.trim() ?? ''),
           priority: Value(priority),
           position: Value(last),
           createdAt: DateTime.now(),
@@ -341,6 +351,9 @@ class PlannerDatabase extends _$PlannerDatabase {
         PlannerTasksCompanion(
           title: Value(title.trim()),
           details: Value(details),
+          delegatedTo: delegatedTo == null
+              ? const Value.absent()
+              : Value(delegatedTo.trim()),
           priority: Value(priority),
         ),
       );
@@ -348,36 +361,61 @@ class PlannerDatabase extends _$PlannerDatabase {
     }
   }
 
-  Future<void> setTaskStatus(int id, String status, {String? targetDay}) =>
-      transaction(() async {
-        if (!taskStatuses.containsKey(status)) {
-          throw ArgumentError('Unknown status');
-        }
-        final task = await (select(
-          plannerTasks,
-        )..where((t) => t.id.equals(id))).getSingle();
-        final day = targetDay ?? task.day;
-        if (status == 'forwarded' && day == task.day) {
-          throw ArgumentError('Choose a different date');
-        }
-        final nextStatus = targetDay != null ? 'open' : status;
-        if (task.status == nextStatus && task.day == day) {
-          return;
-        }
-        await into(taskHistories).insert(
-          TaskHistoriesCompanion.insert(
-            taskId: id,
-            fromStatus: task.status,
-            toStatus: status,
-            fromDay: task.day,
-            toDay: day,
-            changedAt: DateTime.now(),
-          ),
-        );
-        await (update(plannerTasks)..where((t) => t.id.equals(id))).write(
-          PlannerTasksCompanion(status: Value(nextStatus), day: Value(day)),
-        );
-      });
+  Future<void> setTaskStatus(
+    int id,
+    String status, {
+    String? targetDay,
+  }) => transaction(() async {
+    if (!taskStatuses.containsKey(status)) {
+      throw ArgumentError('Unknown status');
+    }
+    final task = await (select(
+      plannerTasks,
+    )..where((t) => t.id.equals(id))).getSingle();
+    final day = targetDay ?? task.day;
+    if (status == 'forwarded' && day == task.day) {
+      throw ArgumentError('Choose a different date');
+    }
+    if (task.status == 'forwarded') return;
+    if (status == 'forwarded') {
+      if (targetDay == null ||
+          DateTime.tryParse(day) == null ||
+          dayKey(DateTime.parse(day)) != day) {
+        throw ArgumentError('Choose a valid destination');
+      }
+      // Keep an independent historical row while the active task retains its
+      // identity, goal links, reminders and journal references.
+      await into(plannerTasks).insert(
+        PlannerTasksCompanion.insert(
+          day: task.day,
+          title: task.title,
+          details: Value(task.details),
+          delegatedTo: Value(task.delegatedTo),
+          priority: Value(task.priority),
+          position: Value(task.position),
+          status: const Value('forwarded'),
+          createdAt: task.createdAt,
+        ),
+      );
+    }
+    final nextStatus = targetDay != null ? 'open' : status;
+    if (task.status == nextStatus && task.day == day) {
+      return;
+    }
+    await into(taskHistories).insert(
+      TaskHistoriesCompanion.insert(
+        taskId: id,
+        fromStatus: task.status,
+        toStatus: status,
+        fromDay: task.day,
+        toDay: day,
+        changedAt: DateTime.now(),
+      ),
+    );
+    await (update(plannerTasks)..where((t) => t.id.equals(id))).write(
+      PlannerTasksCompanion(status: Value(nextStatus), day: Value(day)),
+    );
+  });
   Future<void> reviewTasks(
     Iterable<int> ids,
     String action, {
@@ -402,7 +440,8 @@ class PlannerDatabase extends _$PlannerDatabase {
       final task = await (select(
         plannerTasks,
       )..where((t) => t.id.equals(id))).getSingle();
-      if (action == 'keep' || ['completed', 'canceled'].contains(task.status)) {
+      if (action == 'keep' ||
+          ['completed', 'canceled', 'forwarded'].contains(task.status)) {
         continue;
       }
       if (action == 'forwarded' && task.day == targetDay) continue;
@@ -418,6 +457,35 @@ class PlannerDatabase extends _$PlannerDatabase {
             ..where((h) => h.taskId.equals(id))
             ..orderBy([(h) => OrderingTerm.desc(h.changedAt)]))
           .watch();
+
+  Future<void> moveTaskToPosition(int id, int position) => transaction(
+    () async {
+      final task = await (select(
+        plannerTasks,
+      )..where((t) => t.id.equals(id))).getSingle();
+      final group =
+          await (select(plannerTasks)
+                ..where(
+                  (t) =>
+                      t.day.equals(task.day) & t.priority.equals(task.priority),
+                )
+                ..orderBy([
+                  (t) => OrderingTerm.asc(t.position),
+                  (t) => OrderingTerm.asc(t.id),
+                ]))
+              .get();
+      if (position < 1 || position > group.length) {
+        throw ArgumentError('Invalid position');
+      }
+      final ids = group.map((t) => t.id).toList()..remove(id);
+      ids.insert(position - 1, id);
+      for (var i = 0; i < ids.length; i++) {
+        await (update(plannerTasks)..where((t) => t.id.equals(ids[i]))).write(
+          PlannerTasksCompanion(position: Value(i)),
+        );
+      }
+    },
+  );
 
   Future<void> swapTasks(PlannerTask a, PlannerTask b) => transaction(() async {
     if (a.day != b.day || a.priority != b.priority) {

@@ -319,6 +319,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
       children: [
         PopupMenuButton<String>(
           tooltip: 'Task status: ${taskStatuses[task.status]}',
+          enabled: task.status != 'forwarded',
           onSelected: (status) async {
             if (status == 'forwarded') {
               await pickDate(forward: true, task: task);
@@ -357,10 +358,20 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
         ),
         PopupMenuButton<String>(
           tooltip: 'Reorder task',
-          onSelected: (direction) => safely(
-            () => db.swapTasks(task, direction == 'up' ? previous! : next!),
-          ),
+          onSelected: (direction) async {
+            if (direction == 'position') {
+              await moveTask(task);
+            } else {
+              await safely(
+                () => db.swapTasks(task, direction == 'up' ? previous! : next!),
+              );
+            }
+          },
           itemBuilder: (_) => [
+            const PopupMenuItem(
+              value: 'position',
+              child: Text('Move to position…'),
+            ),
             if (previous != null)
               const PopupMenuItem(value: 'up', child: Text('Move up')),
             if (next != null)
@@ -370,9 +381,34 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
       ],
     ),
   );
+  Future<void> moveTask(PlannerTask task) async {
+    final group = (await db.watchTasks(task.day).first)
+        .where((t) => t.priority == task.priority)
+        .toList();
+    if (!mounted) return;
+    final position = await showDialog<int>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: Text('Move within priority ${task.priority}'),
+        children: [
+          for (var i = 0; i < group.length; i++)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, i + 1),
+              child: Text('${task.priority}${i + 1} — ${group[i].title}'),
+            ),
+        ],
+      ),
+    );
+    if (position != null) {
+      await safely(() => db.moveTaskToPosition(task.id, position));
+    }
+  }
+
   Future<void> reviewUnfinished() async {
     final tasks = (await db.watchTasks(day).first)
-        .where((t) => !['completed', 'canceled'].contains(t.status))
+        .where(
+          (t) => !['completed', 'canceled', 'forwarded'].contains(t.status),
+        )
         .toList();
     if (!mounted) return;
     final selected = tasks.map((t) => t.id).toSet();
@@ -444,7 +480,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
                       child: Text('Destination: ${dayKey(destination)}'),
                     ),
                   const Text(
-                    'Only selected tasks change. Carry-forward moves existing tasks and records their history; it never marks them complete.',
+                    'Carry-forward leaves a forwarded record here and an open task on the selected day.',
                   ),
                 ],
               ),
@@ -484,6 +520,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
     if (!mounted) return;
     final title = TextEditingController(text: task?.title);
     final details = TextEditingController(text: task?.details);
+    final delegatedTo = TextEditingController(text: task?.delegatedTo);
     var priority = task?.priority ?? 'A';
     final saved = await showDialog<bool>(
       context: context,
@@ -513,6 +550,13 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
                       DropdownMenuItem(value: p, child: Text('Priority $p')),
                   ],
                   onChanged: (v) => update(() => priority = v!),
+                ),
+                TextField(
+                  controller: delegatedTo,
+                  decoration: const InputDecoration(
+                    labelText: 'Delegated to (first name)',
+                  ),
+                  textCapitalization: TextCapitalization.words,
                 ),
                 DropdownButton<int?>(
                   isExpanded: true,
@@ -576,6 +620,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
             day: day,
             title: title.text,
             details: details.text,
+            delegatedTo: delegatedTo.text,
             priority: priority,
           );
           await db.linkTaskGoal(savedId, goalId);
@@ -589,6 +634,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
     await Future<void>.delayed(const Duration(milliseconds: 300));
     title.dispose();
     details.dispose();
+    delegatedTo.dispose();
   }
 
   Future<void> appointmentEditor([Appointment? appointment]) async {

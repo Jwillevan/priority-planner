@@ -80,7 +80,7 @@ const lessons = <Lesson>[
     'A sequence tells you what to do first within each priority.',
     [
       'Add two A tasks and one B task. The list numbers each group automatically.',
-      'Use a task’s Reorder task menu to Move up or Move down within its group.',
+      'Use a task’s Reorder task menu to Move to position to choose a rank within its group.',
     ],
     target: 'task',
   ),
@@ -100,7 +100,7 @@ const lessons = <Lesson>[
     'Priority measures importance; status records what happened.',
     [
       '○ Not started; ◐ In progress; ✓ Completed.',
-      '→ Forwarded moves the task to another date; ↗ Delegated records a handoff; × Canceled keeps the record.',
+      '→ Forwarded leaves a record on the original day and an open task on the new day; ↗ Delegated records a handoff (enter the first name in the task editor); × Canceled keeps the record.',
       'Forwarding never marks a task complete. Open its editor to review history.',
     ],
     target: 'task',
@@ -186,7 +186,7 @@ const lessons = <Lesson>[
     'Review a task’s value before recommitting your time.',
     [
       'Open a task’s status symbol and select → Forwarded.',
-      'Choose a different date. The existing task moves there as Not started; its history records the move. For bulk review, use Review unfinished tasks in Daily review, select tasks, choose an action and confirm.',
+      'Choose a different date. The task appears there as Not started, with a separate Forwarded record left on the original day. For bulk review, use Review unfinished tasks in Daily review, select tasks, choose an action and confirm.',
     ],
     target: 'task',
   ),
