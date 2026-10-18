@@ -1,4 +1,4 @@
-# Priority Planner 1.0.1 preview
+# Top 9/Priority Planner 1.0.1 preview
 
 - Forwarding leaves the task title and Forwarded status on its original day, with an open task on the selected day. Completing the active task later preserves that original record. Repeated bulk review does not forward historical records again.
 - Add or edit the delegate's first name in the task editor. The daily list displays the delegated symbol without the name.

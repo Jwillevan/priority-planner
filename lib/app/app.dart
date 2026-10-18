@@ -62,7 +62,7 @@ class PriorityPlannerApp extends ConsumerWidget {
   const PriorityPlannerApp({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) => MaterialApp.router(
-    title: 'Priority Planner',
+    title: 'Top 9/Priority Planner',
     localizationsDelegates: FlutterQuillLocalizations.localizationsDelegates,
     theme: plannerTheme(),
     builder: (context, child) => AppLockGate(child: child ?? const SizedBox()),
@@ -77,7 +77,7 @@ class PlannerShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('Priority Planner'),
+      title: const Text('Top 9/Priority Planner'),
       actions: [
         IconButton(
           tooltip: 'Help & Tutorials',

@@ -50,7 +50,7 @@ class DeviceNotifications implements NotificationPort {
   Future<void> schedule(int id, DateTime at, String kind, bool daily) =>
       plugin.zonedSchedule(
         id: id,
-        title: 'Priority Planner',
+        title: 'Top 9/Priority Planner',
         body: kind == 'planning'
             ? 'Time to plan your day.'
             : kind == 'review'

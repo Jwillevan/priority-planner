@@ -119,7 +119,7 @@ void main() {
       await tester.ensureVisible(find.text(day));
       await tester.tap(find.text(day));
       await settle(tester);
-      expect(find.text('Daily planning'), findsOneWidget);
+      expect(find.text('Top 9/Daily Planning'), findsOneWidget);
       await tester.tap(find.text('Practice goals'));
       await settle(tester);
       expect(find.text('Goals, roles & values'), findsOneWidget);

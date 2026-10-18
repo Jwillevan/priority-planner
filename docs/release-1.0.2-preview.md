@@ -1,4 +1,4 @@
-# Priority Planner 1.0.2 preview
+# Top 9/Priority Planner 1.0.2 preview
 
 Task movement now uses a drag handle instead of the Move up, Move down, or Move to position menu.
 

@@ -18,7 +18,7 @@ Documentation:
 - README.md
 - docs/milestone-1.md
 
-Android label changed to Priority Planner in android/app/src/main/AndroidManifest.xml. Dependencies are locked in pubspec.lock. Synced sources/ references were not changed.
+Android label changed to Top 9/Priority Planner in android/app/src/main/AndroidManifest.xml. Dependencies are locked in pubspec.lock. Synced sources/ references were not changed.
 
 Validation results: flutter analyze: no issues. flutter test: 2 tests passed (schema/upsert and planner tabs). Android compilation result is recorded separately after build completion. No physical-device tests, visual device inspection, process-restart persistence test, release signing, or release APK build has been performed. This foundation does not claim validation for later-milestone features.
 

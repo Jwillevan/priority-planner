@@ -18,7 +18,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Priority Planner'), findsOneWidget);
+    expect(find.text('Top 9/Priority Planner'), findsOneWidget);
     await tester.tap(find.text('Add task'));
     await tester.runAsync(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));

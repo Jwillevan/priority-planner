@@ -149,7 +149,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
   Widget planning() => PaperPage(
     storageKey: 'planning-$day',
     children: [
-      Text('Daily planning', style: Theme.of(context).textTheme.headlineMedium),
+      Text('Top 9/Daily Planning', style: Theme.of(context).textTheme.headlineMedium),
       const Text('PRIORITIZED DAILY TASK LIST'),
       const Text('A · Vital    B · Important    C · Optional'),
       TutorialHighlight(

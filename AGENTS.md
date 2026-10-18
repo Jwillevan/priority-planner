@@ -1,4 +1,4 @@
-# Priority Planner publishing instructions
+# Top 9/Priority Planner publishing instructions
 
 The user requests that this app and all future versions be kept on GitHub.
 

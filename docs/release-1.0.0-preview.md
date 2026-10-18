@@ -1,4 +1,4 @@
-# Priority Planner 1.0.0 preview
+# Top 9/Priority Planner 1.0.0 preview
 
 Offline Android planner with daily tasks and appointments, journal and attachments, weekly/monthly planning, goals, tutorials, app lock, encrypted backups, and local reminders.
 

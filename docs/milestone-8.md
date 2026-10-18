@@ -38,7 +38,7 @@ Validation observed so far:
 - 30 unit/widget tests passed, including bulk-review rollback/idempotency, bulk-review UI, swipe/rotation retention and 2x text on a 360x640 viewport.
 - One Android 16 integration test passed on emulator-5554. It created a task through the app UI; preserved SQLite data after close/reopen; imported managed document/photo/audio copies; recorded AAC audio with native pause/resume/stop; loaded/seeked it with the native audio player; scheduled/canceled a native notification and verified it was pending; queried authentication support; and encrypted/validated a full backup with those media files.
 - Media recording used emulator test audio with host audio disabled. No claim of audible real-phone playback is made. A notification pending in Android's scheduler is not proof of actual delivery.
-- Actual app startup was inspected visually. The first-launch tutorial and classic ivory daily planning page rendered correctly on the emulator.
+- Actual app startup was inspected visually. The first-launch tutorial and classic ivory Top 9/Daily Planning page rendered correctly on the emulator.
 
 Final build, signature, permission and launch checks appended below.
 

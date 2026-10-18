@@ -82,7 +82,7 @@ void main() {
     expect(find.text('NOTES & JOURNAL'), findsOneWidget);
     tester.view.physicalSize = const Size(1000, 700);
     await settle(tester);
-    expect(find.text('Daily planning'), findsOneWidget);
+    expect(find.text('Top 9/Daily Planning'), findsOneWidget);
     expect(find.text('Daily record'), findsOneWidget);
     tester.view.physicalSize = const Size(400, 800);
     await settle(tester);

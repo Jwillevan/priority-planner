@@ -1,4 +1,4 @@
-# Priority Planner
+# Top 9/Priority Planner
 
 Offline-first Flutter Android planner with a traditional ivory, ruled-paper daily spread. An installable 1.0.2 preview is available in `dist/`. Automated checks and Android 16 emulator integration passed; physical-phone acceptance checks remain.
 

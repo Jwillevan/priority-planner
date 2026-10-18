@@ -33,9 +33,9 @@ class _TutorialWelcomeState extends ConsumerState<TutorialWelcome> {
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title: const Text('Welcome to Priority Planner'),
+          title: const Text('Welcome to Top 9/Priority Planner'),
           content: const Text(
-            'Learn traditional daily planning in a safe practice planner. You can repeat lessons later in Help & Tutorials.',
+            'Learn traditional Top 9/Daily Planning in a safe practice planner. You can repeat lessons later in Help & Tutorials.',
           ),
           actions: [
             TextButton(

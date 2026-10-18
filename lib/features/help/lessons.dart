@@ -17,7 +17,7 @@ class Lesson {
 const lessons = <Lesson>[
   Lesson(
     'welcome',
-    'Welcome to Priority Planner',
+    'Welcome to Top 9/Priority Planner',
     'Planning begins with deciding what matters.',
     [
       'Use this separate practice planner. Changes here never enter your personal planner.',
@@ -225,7 +225,7 @@ const lessons = <Lesson>[
     'Monthly planning',
     'Looking ahead reveals deadlines and capacity.',
     [
-      'Open Calendar and select Month. Use Previous/Next period or the date heading to browse months and years; select a date for daily planning.',
+      'Open Calendar and select Month. Use Previous/Next period or the date heading to browse months and years; select a date for Top 9/Daily Planning.',
       'Review important dates, monthly goals and a master task list.',
     ],
     advanced: true,

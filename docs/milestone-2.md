@@ -1,7 +1,7 @@
 # Milestone 2 — Classic Daily Planner
 
 Implemented:
-- Paper-style daily planning and notes pages, labeled portrait tabs, landscape spread at 840 logical pixels, and per-date scroll storage.
+- Paper-style Top 9/Daily Planning and notes pages, labeled portrait tabs, landscape spread at 840 logical pixels, and per-date scroll storage.
 - Previous/next day, Today, and date-picker navigation for past and future planning.
 - ABC tasks with sequential per-group labels, editable details/priority, move-up/down controls, completion summary, and separate status symbols.
 - Status changes (not started, in progress, completed, delegated, canceled), date forwarding without task duplication, and history visible from the task editor. Forwarded tasks reopen on the destination date; the history records forwarding separately from completion.

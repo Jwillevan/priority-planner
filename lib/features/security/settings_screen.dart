@@ -188,7 +188,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   items: const [
                     DropdownMenuItem(
                       value: 'planning',
-                      child: Text('Daily planning'),
+                      child: Text('Top 9/Daily Planning'),
                     ),
                     DropdownMenuItem(
                       value: 'review',

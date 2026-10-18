@@ -1,4 +1,4 @@
-# Priority Planner — Preview installation and phone checks
+# Top 9/Priority Planner — Preview installation and phone checks
 
 The final planned milestone produces an installable preview APK for personal acceptance testing. Emulator and automated checks do not replace testing on your own Android phone. This is not an app-store publication.
 
@@ -6,7 +6,7 @@ The final planned milestone produces an installable preview APK for personal acc
 
 1. Copy `dist/Priority-Planner-1.0.2-preview.apk` to your Android phone (USB or your chosen file transfer).
 2. Open the APK on the phone. If Android asks, allow this specific file source to install apps, then choose Install.
-3. Open Priority Planner and choose Start Tutorial or Skip for Now. No account or subscription is required.
+3. Open Top 9/Priority Planner and choose Start Tutorial or Skip for Now. No account or subscription is required.
 4. Try it with sample information first. Keep encrypted backups outside the app before entrusting irreplaceable records or uninstalling.
 
 The APK is optimized and signed with the existing Android development key for personal testing. Production signing and app-store submission are separate decisions. Keep the signing identity consistent for future in-place updates; an incompatible signing key requires an uninstall, which removes application data. Back up first.

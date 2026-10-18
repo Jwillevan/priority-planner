@@ -20,7 +20,7 @@ class DeviceAuth implements AuthPort {
       throw StateError('Set up a device screen lock first');
     }
     return auth.authenticate(
-      localizedReason: 'Unlock your private Priority Planner',
+      localizedReason: 'Unlock your private Top 9/Priority Planner',
       biometricOnly: false,
       persistAcrossBackgrounding: true,
     );
@@ -172,7 +172,7 @@ class _AppLockGateState extends ConsumerState<AppLockGate>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.lock_outline, size: 48),
-                          const Text('Priority Planner'),
+                          const Text('Top 9/Priority Planner'),
                           if (lock.error != null) Text(lock.error!),
                           if (lock.loaded)
                             FilledButton(
