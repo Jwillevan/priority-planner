@@ -1,0 +1,93 @@
+name: Publish Android preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-preview-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check signing key is configured
+        shell: pwsh
+        env:
+          SIGNING_KEY_BASE64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SIGNING_KEY_BASE64)) {
+            throw 'Configure the ANDROID_DEBUG_KEYSTORE_BASE64 Actions secret using the original development key. No APK will be published without the matching key.'
+          }
+
+      - name: Check out the release source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install the matching Flutter SDK
+        shell: pwsh
+        run: |
+          $flutterRoot = Join-Path $env:RUNNER_TEMP 'planner-flutter'
+          git clone --filter=blob:none --sparse --no-checkout https://github.com/flutter/flutter.git $flutterRoot
+          if ($LASTEXITCODE -ne 0) { throw 'Flutter clone failed.' }
+          git -C $flutterRoot sparse-checkout set bin packages dev examples
+          if ($LASTEXITCODE -ne 0) { throw 'Flutter sparse checkout failed.' }
+          git -C $flutterRoot checkout abaf9c523780a608bd46686fd5e53740a07077f8
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned Flutter checkout failed.' }
+          (Join-Path $flutterRoot 'bin') | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Prepare Android SDK
+        shell: pwsh
+        run: |
+          flutter --version
+          if ($LASTEXITCODE -ne 0) { throw 'Flutter startup failed.' }
+          flutter config --no-analytics --android-sdk $env:ANDROID_HOME
+          if ($LASTEXITCODE -ne 0) { throw 'Flutter Android configuration failed.' }
+          $manager = Join-Path $env:ANDROID_HOME 'cmdline-tools/latest/bin/sdkmanager.bat'
+          & $manager 'platforms;android-35' 'platforms;android-36' 'build-tools;36.0.0' 'ndk;28.2.13676358'
+          if ($LASTEXITCODE -ne 0) { throw 'Android SDK installation failed.' }
+
+      - name: Restore and verify the original signing identity
+        shell: pwsh
+        env:
+          SIGNING_KEY_BASE64: ${{ secrets.ANDROID_DEBUG_KEYSTORE_BASE64 }}
+        run: |
+          $keyDirectory = Join-Path $env:USERPROFILE '.android'
+          New-Item -ItemType Directory -Force $keyDirectory | Out-Null
+          $keyFile = Join-Path $keyDirectory 'debug.keystore'
+          [IO.File]::WriteAllBytes($keyFile, [Convert]::FromBase64String($env:SIGNING_KEY_BASE64))
+          "ANDROID_USER_HOME=$keyDirectory" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $certificate = Join-Path $env:RUNNER_TEMP 'planner-preview-signer.cer'
+          keytool -exportcert -alias androiddebugkey -keystore $keyFile -storepass android -file $certificate
+          if ($LASTEXITCODE -ne 0) { throw 'The development key could not be opened.' }
+          $fingerprint = (Get-FileHash -LiteralPath $certificate -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($fingerprint -ne 'd17b5f5e009c8e7ec1d6fc00209eae3b60a2fac1f38beb8474ccf66e7c85049c') {
+            throw 'This signing key does not match the published 1.0.2 APK. No update will be published.'
+          }
+
+      - name: Test, build, verify, and publish the preview
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .\tools\publish-preview.ps1 -AndroidSdkRoot $env:ANDROID_HOME
+
+      - name: Remove temporary signing material
+        if: always()
+        shell: pwsh
+        run: |
+          $keyFile = Join-Path $env:USERPROFILE '.android/debug.keystore'
+          if (Test-Path -LiteralPath $keyFile) { Remove-Item -LiteralPath $keyFile -Force }
+          $certificate = Join-Path $env:RUNNER_TEMP 'planner-preview-signer.cer'
+          if (Test-Path -LiteralPath $certificate) { Remove-Item -LiteralPath $certificate -Force }
