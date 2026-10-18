@@ -147,16 +147,16 @@ void main() {
       ),
     );
     await settle(tester);
-    await tester.scrollUntilVisible(
-      find.text('Review unfinished tasks'),
-      400,
-      scrollable: find
-          .descendant(
-            of: find.byType(PaperPage).first,
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
+    for (
+      var i = 0;
+      i < 12 && find.text('Review unfinished tasks').evaluate().isEmpty;
+      i++
+    ) {
+      await tester.dragFrom(const Offset(20, 450), const Offset(0, -400));
+      await settle(tester);
+    }
+    await tester.ensureVisible(find.text('Review unfinished tasks'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Review unfinished tasks'));
     await settle(tester);
     await tester.tap(find.text('Apply to 2 tasks'));
@@ -175,8 +175,12 @@ void main() {
     await tester.runAsync(db.close);
   });
   testWidgets(
-    'delegate is private to editor and task can move directly to last position',
+    'delegate stays private and dragging changes priority in ABC order',
     (tester) async {
+      tester.view.physicalSize = const Size(800, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       final db = PlannerDatabase.forTesting(NativeDatabase.memory());
       await tester.runAsync(() async {
         for (var i = 0; i < 3; i++) {
@@ -220,16 +224,26 @@ void main() {
       await tester.tap(find.text('Save'));
       await settle(tester);
       expect(find.text('Alex'), findsNothing);
-      await tester.tap(find.byTooltip('Reorder task').first);
-      await settle(tester);
-      await tester.tap(find.text('Move to position…'));
-      await settle(tester);
-      await tester.tap(find.text('A3 — Action 2'));
+      expect(find.text('Move up'), findsNothing);
+      expect(find.text('Move down'), findsNothing);
+      final handle = find.byTooltip('Drag to change order or priority').first;
+      final start = tester.getCenter(handle);
+      final target = tester.getBottomLeft(
+        find.byKey(const ValueKey('priority-B')),
+      );
+      final gesture = await tester.startGesture(start);
+      await gesture.moveBy(const Offset(0, 8));
+      await tester.pump();
+      await gesture.moveTo(Offset(start.dx, target.dy + 32));
+      await tester.pump(const Duration(milliseconds: 700));
+      await gesture.up();
       await settle(tester);
       final tasks = (await tester.runAsync(
         () => db.watchTasks('2026-10-16').first,
       ))!;
       expect(tasks.last.title, 'Action 0');
+      expect(tasks.last.priority, 'B');
+      expect(tasks.map((t) => t.priority), ['A', 'A', 'B']);
       expect(tasks.last.delegatedTo, 'Alex');
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));

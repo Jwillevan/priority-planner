@@ -80,7 +80,7 @@ const lessons = <Lesson>[
     'A sequence tells you what to do first within each priority.',
     [
       'Add two A tasks and one B task. The list numbers each group automatically.',
-      'Use a task’s Reorder task menu to Move to position to choose a rank within its group.',
+      'Slide a task using its drag handle to change its order. Drop it below the A, B, or C heading to change priority; the list renumbers automatically.',
     ],
     target: 'task',
   ),

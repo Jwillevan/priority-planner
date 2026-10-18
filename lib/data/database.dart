@@ -487,6 +487,40 @@ class PlannerDatabase extends _$PlannerDatabase {
     },
   );
 
+  Future<void> moveTaskToGroup(int id, String priority, int position) =>
+      transaction(() async {
+        if (!['A', 'B', 'C'].contains(priority)) {
+          throw ArgumentError('Invalid priority');
+        }
+        final task = await (select(
+          plannerTasks,
+        )..where((t) => t.id.equals(id))).getSingle();
+        final tasks = await watchTasks(task.day).first;
+        final destination = tasks
+            .where((t) => t.priority == priority && t.id != id)
+            .map((t) => t.id)
+            .toList();
+        if (position < 1 || position > destination.length + 1) {
+          throw ArgumentError('Invalid position');
+        }
+        destination.insert(position - 1, id);
+        for (final group in {task.priority, priority}) {
+          final ids = group == priority
+              ? destination
+              : tasks
+                    .where((t) => t.priority == group && t.id != id)
+                    .map((t) => t.id)
+                    .toList();
+          for (var i = 0; i < ids.length; i++) {
+            await (update(
+              plannerTasks,
+            )..where((t) => t.id.equals(ids[i]))).write(
+              PlannerTasksCompanion(priority: Value(group), position: Value(i)),
+            );
+          }
+        }
+      });
+
   Future<void> swapTasks(PlannerTask a, PlannerTask b) => transaction(() async {
     if (a.day != b.day || a.priority != b.priority) {
       throw ArgumentError('Reorder within a priority');

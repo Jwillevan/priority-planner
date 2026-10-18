@@ -21,6 +21,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
   late DateTime date = DateUtils.dateOnly(widget.initialDate ?? DateTime.now());
   late final TabController tabs;
   late Timer clock;
+  bool savingOrder = false;
   @override
   void initState() {
     super.initState();
@@ -167,7 +168,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
           }
           if (!snapshot.hasData) return const LinearProgressIndicator();
           final tasks = snapshot.data!;
-          final counts = <String, int>{};
+
           return Column(
             children: [
               Text(
@@ -178,18 +179,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
                   padding: EdgeInsets.all(16),
                   child: Text('What matters most today? Add your first task.'),
                 ),
-              for (var i = 0; i < tasks.length; i++)
-                taskRow(
-                  tasks[i],
-                  '${tasks[i].priority}${counts.update(tasks[i].priority, (v) => v + 1, ifAbsent: () => 1)}',
-                  i > 0 && tasks[i - 1].priority == tasks[i].priority
-                      ? tasks[i - 1]
-                      : null,
-                  i + 1 < tasks.length &&
-                          tasks[i + 1].priority == tasks[i].priority
-                      ? tasks[i + 1]
-                      : null,
-                ),
+              taskOrderList(tasks),
             ],
           );
         },
@@ -306,12 +296,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
       ),
     ],
   );
-  Widget taskRow(
-    PlannerTask task,
-    String number,
-    PlannerTask? previous,
-    PlannerTask? next,
-  ) => Container(
+  Widget taskRow(PlannerTask task, String number, int dragIndex) => Container(
     decoration: const BoxDecoration(
       border: Border(bottom: BorderSide(color: rule)),
     ),
@@ -356,52 +341,83 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen>
             ),
           ),
         ),
-        PopupMenuButton<String>(
-          tooltip: 'Reorder task',
-          onSelected: (direction) async {
-            if (direction == 'position') {
-              await moveTask(task);
-            } else {
-              await safely(
-                () => db.swapTasks(task, direction == 'up' ? previous! : next!),
-              );
-            }
-          },
-          itemBuilder: (_) => [
-            const PopupMenuItem(
-              value: 'position',
-              child: Text('Move to position…'),
+        ReorderableDragStartListener(
+          index: dragIndex,
+          enabled: !savingOrder,
+          child: const Tooltip(
+            message: 'Drag to change order or priority',
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              child: Icon(Icons.drag_handle),
             ),
-            if (previous != null)
-              const PopupMenuItem(value: 'up', child: Text('Move up')),
-            if (next != null)
-              const PopupMenuItem(value: 'down', child: Text('Move down')),
-          ],
+          ),
         ),
       ],
     ),
   );
-  Future<void> moveTask(PlannerTask task) async {
-    final group = (await db.watchTasks(task.day).first)
-        .where((t) => t.priority == task.priority)
-        .toList();
-    if (!mounted) return;
-    final position = await showDialog<int>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: Text('Move within priority ${task.priority}'),
+  Widget taskOrderList(List<PlannerTask> tasks) {
+    final items = <Object>[
+      for (final priority in ['A', 'B', 'C']) ...[
+        priority,
+        ...tasks.where((t) => t.priority == priority),
+      ],
+    ];
+    final counts = <String, int>{};
+    return SizedBox(
+      height: (items.length * 56.0).clamp(168.0, 420.0),
+      child: ReorderableListView(
+        buildDefaultDragHandles: false,
+        onReorderItem: (oldIndex, newIndex) async {
+          if (savingOrder || items[oldIndex] is! PlannerTask) return;
+          final reordered = List<Object>.of(items);
+          final task = reordered.removeAt(oldIndex) as PlannerTask;
+          reordered.insert(newIndex, task);
+          var priority = 'A';
+          var position = 1;
+          for (final item in reordered) {
+            if (identical(item, task)) break;
+            if (item is String) {
+              priority = item;
+              position = 1;
+            } else {
+              position++;
+            }
+          }
+          setState(() => savingOrder = true);
+          try {
+            await safely(() => db.moveTaskToGroup(task.id, priority, position));
+          } finally {
+            if (mounted) setState(() => savingOrder = false);
+          }
+        },
         children: [
-          for (var i = 0; i < group.length; i++)
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(context, i + 1),
-              child: Text('${task.priority}${i + 1} — ${group[i].title}'),
-            ),
+          for (var i = 0; i < items.length; i++)
+            if (items[i] is String)
+              ListTile(
+                key: ValueKey('priority-${items[i]}'),
+                title: Text(
+                  '${items[i]} · ${switch (items[i]) {
+                    'A' => 'Vital',
+                    'B' => 'Important',
+                    _ => 'Optional',
+                  }}',
+                ),
+                subtitle: const Text('Drag tasks below this heading'),
+              )
+            else
+              Material(
+                key: ValueKey('task-${(items[i] as PlannerTask).id}'),
+                type: MaterialType.transparency,
+                child: taskRow(
+                  items[i] as PlannerTask,
+                  '${(items[i] as PlannerTask).priority}${counts.update((items[i] as PlannerTask).priority, (v) => v + 1, ifAbsent: () => 1)}',
+                  i,
+                ),
+              ),
         ],
       ),
     );
-    if (position != null) {
-      await safely(() => db.moveTaskToPosition(task.id, position));
-    }
   }
 
   Future<void> reviewUnfinished() async {

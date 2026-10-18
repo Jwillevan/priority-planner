@@ -1,1 +1,1 @@
-8ae8db1678fe47f35eb6ee15f6f6b078a38cfb0567ad6ebcdfe89331d34cd735  Priority-Planner-1.0.1-preview.apk
+d742eba0731a11120a5b11f37d17d00160f65e129641c3c23491abacd245b8a4  Priority-Planner-1.0.2-preview.apk

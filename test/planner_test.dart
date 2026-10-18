@@ -104,6 +104,44 @@ void main() {
       await dir.delete(recursive: true);
     },
   );
+  test(
+    'drag moves across empty priorities and normalizes both groups',
+    () async {
+      final db = PlannerDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final ids = <int>[];
+      for (var i = 0; i < 4; i++) {
+        ids.add(
+          await db.saveTask(
+            day: '2026-10-17',
+            title: 'Task $i',
+            details: '',
+            priority: 'A',
+          ),
+        );
+      }
+      await db.moveTaskToGroup(ids[1], 'C', 1);
+      var tasks = await db.watchTasks('2026-10-17').first;
+      expect(tasks.map((t) => t.priority), ['A', 'A', 'A', 'C']);
+      expect(tasks.map((t) => t.position), [0, 1, 2, 0]);
+      await db.moveTaskToGroup(ids[1], 'B', 1);
+      await db.moveTaskToGroup(ids[3], 'B', 1);
+      tasks = await db.watchTasks('2026-10-17').first;
+      expect(tasks.map((t) => t.id), [ids[0], ids[2], ids[3], ids[1]]);
+      expect(tasks.map((t) => t.position), [0, 1, 0, 1]);
+      await db.moveTaskToGroup(ids[3], 'B', 2);
+      expect((await db.watchTasks('2026-10-17').first).last.id, ids[3]);
+      await expectLater(
+        db.moveTaskToGroup(ids[0], 'D', 1),
+        throwsArgumentError,
+      );
+      await expectLater(
+        db.moveTaskToGroup(ids[0], 'C', 2),
+        throwsArgumentError,
+      );
+      expect(await db.select(db.plannerTasks).get(), hasLength(4));
+    },
+  );
   test('appointment validation permits overlaps and edits', () async {
     final db = PlannerDatabase.forTesting(NativeDatabase.memory());
     addTearDown(db.close);
