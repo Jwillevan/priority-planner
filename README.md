@@ -1,6 +1,6 @@
 # Top 9/Priority Planner
 
-Offline-first Flutter Android planner with a traditional ivory, ruled-paper daily spread. An installable 1.0.2 preview is available in `dist/`. Automated checks and Android 16 emulator integration passed; physical-phone acceptance checks remain.
+Offline-first Flutter Android planner with a traditional ivory, ruled-paper daily spread. Source version: **1.0.3+4**, including the Top 9/ naming update. Installable APKs are published on the [Releases page](https://github.com/Jwillevan/priority-planner/releases); a source version change alone does not mean a new APK has been built. The previous 1.0.2 preview passed automated checks and Android 16 emulator integration; those results do not certify the 1.0.3 revision.
 
 ## Features available
 
@@ -67,3 +67,18 @@ Forwarding keeps a Forwarded record on the original day and an open task on the 
 ## Version 1.0.2
 
 Slide tasks with the drag handle to choose their order or move them between the A, B, and C sections. Empty sections remain available as drop destinations. The list keeps ABC order and renumbers both affected groups. The move menu has been removed.
+
+## Version 1.0.3
+
+Displayed names use **Top 9/Priority Planner** and **Top 9/Daily Planning**, including the launcher label, tutorials, reminders, and lock prompts. The application ID and database schema are unchanged.
+
+### Publishing the preview from the original build computer
+
+Run `tools/publish-preview.ps1` from a clean checkout containing this revision. It runs the existing build/test script, compares the APK signer with the published 1.0.2 APK, validates the package/version, and uploads a verified draft release before publishing it. It requires Flutter, Android SDK Build-Tools, Git, authenticated GitHub CLI, and the same development signing key used for 1.0.2. A newly generated debug key cannot replace that original key for an in-place update.
+
+```powershell
+git pull --ff-only
+.\tools\publish-preview.ps1
+```
+
+Optionally pass `-AndroidTestDevice <device-id>` to run the Android integration test on a configured test device. The publishing helper must run on the original build computer (or an environment securely provisioned with its signing key); this cloud workspace cannot access that computer's credentials or SDK. If the helper reports a signing mismatch, do not uninstall the existing app to work around it. Preserve/export the data and restore the original signing environment instead.
