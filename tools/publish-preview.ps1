@@ -25,8 +25,12 @@ function Get-ApkSigner {
     param([string]$ApkPath)
     $output = & $script:apksigner verify --print-certs $ApkPath
     if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed.' }
-    $certificateMatches = [regex]::Matches(($output -join "`n"), '(?m)^Signer #\d+ certificate SHA-256 digest:\s*(\S+)\s*$')
-    if ($certificateMatches.Count -eq 0) { throw 'APK signer could not be identified.' }
+    $certificateMatches = [regex]::Matches(($output -join "`n"), '(?m)^\s*Signer[^\r\n]*certificate SHA-256 digest:\s*([0-9a-fA-F]{64})\s*$')
+    if ($certificateMatches.Count -eq 0) {
+        # apksigner prints public APK certificate metadata, never private keys.
+        Write-Host ($output -join "`n")
+        throw 'APK signer could not be identified.'
+    }
     return (($certificateMatches | ForEach-Object { $_.Groups[1].Value.ToLowerInvariant() } | Sort-Object -Unique) -join ',')
 }
 
@@ -62,7 +66,10 @@ try {
     if ($env:LOCALAPPDATA) { $candidates += (Join-Path $env:LOCALAPPDATA 'Android\Sdk') }
     $sdkPath = $candidates | Where-Object { $_ -and (Test-Path (Join-Path $_ 'build-tools')) } | Select-Object -First 1
     if (-not $sdkPath) { throw 'Android SDK not found. Pass -AndroidSdkRoot with the SDK path.' }
+    # Use the version installed by the workflow, not unrelated prerelease tools
+    # that may happen to be preinstalled on a hosted runner.
     $buildTools = Get-ChildItem -LiteralPath (Join-Path $sdkPath 'build-tools') -Directory |
+        Where-Object { $_.Name -eq '36.0.0' } |
         Where-Object { (Test-Path (Join-Path $_.FullName 'apksigner.bat')) -and (Test-Path (Join-Path $_.FullName 'aapt.exe')) } |
         Sort-Object { [version]($_.Name -replace '-.*$', '') } -Descending | Select-Object -First 1
     if (-not $buildTools) { throw 'Install Android SDK Build-Tools with apksigner and aapt.' }
