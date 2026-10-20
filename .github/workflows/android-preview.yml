@@ -15,6 +15,11 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: windows-latest
     timeout-minutes: 60
+    env:
+      # Kotlin incremental compilation requires plugin sources and the Android
+      # project to share a Windows drive. The default Pub cache is on C:, while
+      # hosted checkouts are on D:. Keep this cache outside the clean checkout.
+      PUB_CACHE: ${{ github.workspace }}/../planner-pub-cache
     steps:
       - name: Check signing key is configured
         shell: pwsh

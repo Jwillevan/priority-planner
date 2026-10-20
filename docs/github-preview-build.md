@@ -4,6 +4,8 @@ The `Publish Android preview` workflow can build and publish 1.0.3 without locat
 the original project folder or installing Flutter on the phone owner's computer.
 It uses the pinned Flutter revision from the existing project, Java 21, Android
 APIs 35 and 36, and NDK 28.2.13676358. It runs only when manually dispatched on `main`.
+The Pub dependency cache lives beside the checkout, on the same Windows drive,
+to avoid Kotlin incremental-compilation errors across drive roots.
 
 ## Signing key setup: once, on the computer that holds the existing key
 
